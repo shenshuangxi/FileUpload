@@ -1,4 +1,4 @@
-package com.sundy.SwfUpload;
+package com.sundy.fileupload;
 
 import java.io.File;
 import java.io.IOException;

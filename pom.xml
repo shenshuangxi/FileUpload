@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.sundy</groupId>
-  <artifactId>SwfUpload</artifactId>
+  <artifactId>fileupload</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>war</packaging>
 
-  <name>SwfUpload</name>
+  <name>fileupload</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -72,7 +72,7 @@
   				<target>1.7</target>
   			</configuration>
   		</plugin>
-  		<plugin>
+  		<!-- <plugin>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-maven-plugin</artifactId>
             <version>9.2.19.v20160908</version>
@@ -81,7 +81,7 @@
                     <contextPath>/${project.artifactId}</contextPath>
                 </webApp>
             </configuration>
-        </plugin>
+        </plugin> -->
   	</plugins>
   </build>
 </project>
