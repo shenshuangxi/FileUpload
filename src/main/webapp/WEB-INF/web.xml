@@ -8,7 +8,26 @@
     <servlet-name>FileUploadServlet</servlet-name>
     <url-pattern>/FileUploadServlet.htm1</url-pattern>
   </servlet-mapping>
+  
+  <servlet>
+    <servlet-name>FileMergeServlet</servlet-name>
+    <servlet-class>com.sundy.fileupload.FileMergeServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileMergeServlet</servlet-name>
+    <url-pattern>/FileMergeServlet.htm1</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <servlet-name>FileCheckServlet</servlet-name>
+    <servlet-class>com.sundy.fileupload.FileCheckServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileCheckServlet</servlet-name>
+    <url-pattern>/FileCheckServlet.htm1</url-pattern>
+  </servlet-mapping>
+  
   <welcome-file-list>
-    <welcome-file>spiltFileUpload.jsp</welcome-file>
+    <welcome-file>fileUpload.jsp</welcome-file>
   </welcome-file-list>
 </web-app>

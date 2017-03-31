@@ -42,13 +42,17 @@
 	text-align: center;
 }
 </style>
+<script type="text/javascript" src="js/upload.js"></script>
 </head>
 <body>
+
+	<div id="testjs"></div>
+
 	<form enctype="multipart/form-data" action="/fileupload/FileUploadServlet.htm1" method="post">
 		<div id="upimg">
 			<div id="load"></div>
 		</div>
-		<input type="file" name="mof" multiple="multiple" />
+		<input type="file" name="mof" multiple="multiple"  />
 		<input type="button" value="uploadfile" onclick="upfile();" />
 	</form>
 	<div id="test">测试是否DIV消失</div>
@@ -108,8 +112,7 @@
 		　　　//分割文件核心部分slice
 		   	blob=file.slice(start,end);
 		   	fd=new FormData();
-		   	fd.append('mof',blob);
-		   	fd.append('test',file.name);
+		   	fd.append(file.name+"-"+(start+1),blob);
 		   	xhr.send(fd);
   		}else{
    			//clearInterval(clock);
@@ -122,4 +125,13 @@
  
 </script>
 </body>
+<script type="text/javascript">
+
+	/* console.log(document.getElementsByTagName('form'));
+	console.log(document.getElementById('upimg'));
+	console.log(GnifUpload.dom('form'));
+	console.log(GnifUpload.dom('#upimg'));
+	GnifUpload.showDiagram('#testjs'); */
+	
+</script>
 </html>
