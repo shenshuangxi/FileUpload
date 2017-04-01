@@ -27,6 +27,15 @@
     <url-pattern>/FileCheckServlet.htm1</url-pattern>
   </servlet-mapping>
   
+  <servlet>
+    <servlet-name>CacheFileCheckServlet</servlet-name>
+    <servlet-class>com.sundy.fileupload.CacheFileCheckServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>CacheFileCheckServlet</servlet-name>
+    <url-pattern>/CacheFileCheckServlet.htm1</url-pattern>
+  </servlet-mapping>
+  
   <welcome-file-list>
     <welcome-file>fileUpload.jsp</welcome-file>
   </welcome-file-list>

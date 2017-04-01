@@ -1,6 +1,5 @@
 package com.sundy.fileupload;
 
-import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
@@ -12,7 +11,6 @@ import com.alibaba.fastjson.JSON;
 import com.sundy.fileupload.contant.ContantConfig;
 import com.sundy.fileupload.message.RspMessage;
 import com.sundy.fileupload.util.FileUtil;
-import com.sundy.fileupload.util.MD5Util;
 
 public class FileCheckServlet extends HttpServlet {
 
@@ -27,79 +25,34 @@ public class FileCheckServlet extends HttpServlet {
 		request.setCharacterEncoding("utf-8");
 		
 		//body true 表示不需上传
-		RspMessage rspMessage = new RspMessage(true, "文件已存在", true);
+		RspMessage rspMessage = new RspMessage(true, "文件已存在");
 		
 		String fileName = request.getParameter("fileName");
-		String fileCacheName = request.getParameter("fileCacheName")==null?null:request.getParameter("fileCacheName");
-		Long fileCacheSize = request.getParameter("fileCacheSize")==null?null:Long.parseLong(request.getParameter("fileCacheName"));
-		
 		String base = ContantConfig.winDirPath;
 		String separator = ContantConfig.fileSeparator;
 		if(separator.equals("/")){
 			base = ContantConfig.linuxDirPath;
 		}
 		
-		//检查文件是否已经上传合并
-		String filePath = base+separator+fileName;
-		if(FileUtil.exist(filePath)){
+		if(fileName==null){
+			rspMessage.setIsSuccess(false);
+			rspMessage.setMessage("上传文件名参数空");
 			response.getWriter().write(JSON.toJSONString(rspMessage));
 			return ;
 		}
 		
-		//检测是否已经上传了
-		try {
-			String cacheFileDir = base+separator+MD5Util.encoderByMd5(fileName);
-			if(!FileUtil.exist(cacheFileDir)){
-				rspMessage.setBody(false);
-				rspMessage.setMessage("还没开始上传");
-				response.getWriter().write(JSON.toJSONString(rspMessage, true));
-				return ;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		//检查文件是否已经上传合并
+		String filePath = base+separator+fileName;
+		if(!FileUtil.exist(filePath)){
 			rspMessage.setIsSuccess(false);
-			rspMessage.setMessage(e.getMessage());
-			rspMessage.setBody(e);
-			response.getWriter().write(JSON.toJSONString(rspMessage, true));
-			return;
+			rspMessage.setMessage(fileName+" 文件不存在");
+			response.getWriter().write(JSON.toJSONString(rspMessage));
+			return ;
 		}
 		
-		try {
-			if(fileCacheName!=null){
-				String cacheFilePath = base+separator+MD5Util.encoderByMd5(fileName)+separator+fileCacheName;
-				if(!FileUtil.exist(cacheFilePath)){
-					rspMessage.setBody(false);
-					rspMessage.setMessage("还没开始上传");
-					response.getWriter().write(JSON.toJSONString(rspMessage, true));
-					return ;
-				}else{
-					if(fileCacheSize!=null){
-						File file = new File(cacheFilePath);
-						long currentLength = file.length();
-						if(currentLength==fileCacheSize){
-							rspMessage.setBody(true);
-							rspMessage.setMessage("文件已存在，不需再次上传");
-							response.getWriter().write(JSON.toJSONString(rspMessage, true));
-							return ;
-						}else{
-							file.delete();
-							rspMessage.setBody(false);
-							rspMessage.setMessage("文件已存在，但长度不一致，需重新上传");
-							response.getWriter().write(JSON.toJSONString(rspMessage, true));
-							return ;
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			rspMessage.setBody(e);
-			rspMessage.setIsSuccess(false);
-			rspMessage.setMessage(e.getMessage());
-			response.getWriter().write(JSON.toJSONString(rspMessage, true));
-		}
+		response.getWriter().write(JSON.toJSONString(rspMessage));
 		
-		response.getWriter().write(JSON.toJSONString(rspMessage, true));
+		
 		
 	}
 	

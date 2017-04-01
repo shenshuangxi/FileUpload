@@ -6,12 +6,21 @@ public class RspMessage {
 	private String message;
 	private Object body;
 	
+	public RspMessage(Boolean isSuccess, String message) {
+		this.isSuccess = isSuccess;
+		this.message = message;
+	}
+	
+	
+	
 	public RspMessage(Boolean isSuccess, String message, Object body) {
 		this.isSuccess = isSuccess;
 		this.message = message;
 		this.body = body;
 	}
-	
+
+
+
 	public Boolean getIsSuccess() {
 		return isSuccess;
 	}

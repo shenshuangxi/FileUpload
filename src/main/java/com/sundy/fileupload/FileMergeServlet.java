@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -16,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import com.alibaba.fastjson.JSON;
 import com.sundy.fileupload.contant.ContantConfig;
 import com.sundy.fileupload.message.RspMessage;
-import com.sundy.fileupload.util.FileUtil;
 import com.sundy.fileupload.util.MD5Util;
 
 public class FileMergeServlet extends HttpServlet {
@@ -29,60 +27,70 @@ public class FileMergeServlet extends HttpServlet {
 	public void doPost(HttpServletRequest request, HttpServletResponse response)throws ServletException, IOException {
 		response.setCharacterEncoding("utf-8");
 		request.setCharacterEncoding("utf-8");
-		RspMessage rspMessage = new RspMessage(true, "合并成功", true);
+		RspMessage rspMessage = new RspMessage(true, "合并成功");
 		try {
 			String fileName = request.getParameter("fileName");
-			long fileSize = request.getParameter("fileSize")==null?0:Long.parseLong(request.getParameter("fileSize"));
 			String base = ContantConfig.winDirPath;
 			String separator = ContantConfig.fileSeparator;
 			if(separator.equals("/")){
 				base = ContantConfig.linuxDirPath;
 			}
-			String targetFilePath = base+separator+fileName;
-			String srcFilePath;
-			srcFilePath = base+separator+MD5Util.encoderByMd5(fileName);
-			File targetFile = new File(targetFilePath);
-			File dirFile = new File(srcFilePath);
-			List<File> files = new ArrayList<File>();
-			long cacheFilesSize = 0l;
-			if(dirFile.exists()){
-				for(File file : dirFile.listFiles()){
-					cacheFilesSize = cacheFilesSize + file.length();
-					files.add(file);
-				}
+			
+			if(fileName==null){
+				rspMessage.setIsSuccess(false);
+				rspMessage.setMessage("上传文件名参数空");
+				response.getWriter().write(JSON.toJSONString(rspMessage));
+				return ;
 			}
 			
-			if(fileSize==cacheFilesSize){
-				RandomAccessFile wraf = new RandomAccessFile(targetFile, "rw");
-				try {
-					for(File file : files){
-						ByteBuffer buf = ByteBuffer.allocate(1024);
-						RandomAccessFile rraf = new RandomAccessFile(file, "r");
-						try {
-							while(rraf.getChannel().read(buf)>0){
-								buf.flip();
-								wraf.getChannel().write(buf);
-								buf.rewind();
-							}
-						} finally{
-							rraf.close();
-						}
-					}
-				} finally{
-					dirFile.delete();
-					wraf.close();
+			String targetFilePath = base+separator+fileName;
+			File targetFile = new File(targetFilePath);
+			
+			String srcDirFilePath = base+separator+MD5Util.encoderByMd5(fileName);
+			File srcDirFile = new File(srcDirFilePath);
+			List<File> cacheFiles = new ArrayList<File>();
+			long cacheFilesSize = 0l;
+			if(srcDirFile.isDirectory()&&srcDirFile.exists()){
+				for(File file : srcDirFile.listFiles()){
+					cacheFilesSize = cacheFilesSize + file.length();
+					cacheFiles.add(file);
 				}
 			}else{
-				rspMessage.setBody(false);
-				rspMessage.setMessage("文件长度:"+fileSize+"kb,接收文件长度: "+cacheFilesSize+"kb"+" 数据长度不一致");
+				rspMessage.setIsSuccess(false);
+				rspMessage.setMessage(fileName+"文件的缓存文件夹"+srcDirFilePath+"不能存在,或不是文件夹");
+				response.getWriter().write(JSON.toJSONString(rspMessage));
+				return ;
 			}
+			
+			RandomAccessFile wraf = new RandomAccessFile(targetFile, "rw");
+			try {
+				for(File cacheFile : cacheFiles){
+					ByteBuffer buf = ByteBuffer.allocate(1024);
+					RandomAccessFile rraf = new RandomAccessFile(cacheFile, "r");
+					try {
+						while(rraf.getChannel().read(buf)>0){
+							buf.flip();
+							wraf.getChannel().write(buf);
+							buf.rewind();
+						}
+					} finally{
+						rraf.close();
+					}
+				}
+			} finally{
+				for(File file : srcDirFile.listFiles()){
+					file.delete();
+				}
+				srcDirFile.delete();
+				wraf.close();
+			}
+			response.getWriter().write(JSON.toJSONString(rspMessage));
 		} catch (Exception e) {
 			e.printStackTrace();
 			rspMessage.setIsSuccess(false);
-			rspMessage.setMessage(e.getMessage());
-			rspMessage.setBody(e);
+			rspMessage.setMessage("服务端出错: "+e.getMessage());
+			response.getWriter().write(JSON.toJSONString(rspMessage));
 		}
-		response.getWriter().write(JSON.toJSONString(rspMessage));
 		
 	}
 }

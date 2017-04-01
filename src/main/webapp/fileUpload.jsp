@@ -13,51 +13,24 @@
 <base href="<%=basePath%>">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>分割大文件上传</title>
-<style>
-#test {
-	width: 200px;
-	height: 100px;
-	border: 1px solid green;
-	display: none;
-}
-
-#img {
-	width: 50px;
-	height: 50px;
-	display: none;
-}
-
-#upimg {
-	text-align: center;
-	font: 8px/10px '微软雅黑', '黑体', sans-serif;
-	width: 300px;
-	height: 10px;
-	border: 1px solid green;
-}
-
-#load {
-	width: 0%;
-	height: 100%;
-	background: green;
-	text-align: center;
-}
-</style>
 <script type="text/javascript" src="js/fileupload.js"></script>
+<link rel="stylesheet" type="text/css" href="js/fileupload.css" />
 </head>
 <body>
-	<form enctype="multipart/form-data">
+	<!-- <form enctype="multipart/form-data">
 		<div id="upimg">
 			<div id="load"></div>
 		</div>
 		<input type="file" id="files" multiple="multiple"  />
 		<input type="button" value="uploadfile" onclick="start();" />
 	</form>
-	<div id="test">测试是否DIV消失</div>
+	<div id="test">测试是否DIV消失</div> -->
+	<div id="gnifUploadFiles"></div>
 </body>
 <script type="text/javascript">
-function start(){
+/* function start(){
 	startUploadFiles("/fileupload/FileCheckServlet.htm1","/fileupload/FileUploadServlet.htm1","/fileupload/FileMergeServlet.htm1","files");
-}
-
+} */
+GnifUpload.showDiagram("/fileupload/FileCheckServlet.htm1","/fileupload/FileMergeServlet.htm1","/fileupload/CacheFileCheckServlet.htm1","/fileupload/FileUploadServlet.htm1",'gnifUploadFiles');
 </script>
 </html>
