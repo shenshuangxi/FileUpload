@@ -22,7 +22,7 @@ var GnifUpload = (function() {
 			return this.file;
 		}
 		this.removeCache = function(index) {
-			this.cacheFiles = this.cacheFiles.slice(index);
+			this.cacheFiles = this.cacheFiles.slice(index+1);
 		}
 
 		this.length = function() {
@@ -100,8 +100,10 @@ var GnifUpload = (function() {
 		nodeArray.forEach(function(node, index, arr) {
 			if (node.id == "load") {
 				node.style.width = pecent + '%';
-				node.innerHTML = parseFloat(pecent).toFixed(2) + '%';
 				return;
+			}
+			if(node.id == 'percent'){
+				node.innerHTML = parseFloat(pecent).toFixed(2) + '%';
 			}
 		});
 
@@ -117,8 +119,10 @@ var GnifUpload = (function() {
 		nodeArray.forEach(function(node, index, arr) {
 			if (node.id == "load") {
 				node.style.width = '100%';
-				node.innerHTML = '100%';
 				return;
+			}
+			if(node.id == 'percent'){
+				node.innerHTML = '100%';
 			}
 		});
 
@@ -149,9 +153,9 @@ var GnifUpload = (function() {
 			if (xmlhttp.readyState == 4) {
 				if (xmlhttp.status >= 200 && xmlhttp.status < 300) {
 					callFunc(xmlhttp.responseText);
+				}else{
+					throw("xmlhttp.status: "+xmlhttp.status+" xmlhttp.responseText: "+xmlhttp.responseText);
 				}
-			} else {
-				throw (xmlhttp);
 			}
 		}
 		if (!!data) {
@@ -183,10 +187,9 @@ var GnifUpload = (function() {
 		return isSuccess;
 	}
 
-	function checkFileCacheExist(checkCacheUrl, filename, fileCacheName,
-			fileCacheSize) {
+	function checkFileCacheExist(filename, fileCacheName, fileCacheSize) {
 		var flag = false;
-		send("post", checkCacheUrl, false, "fileName=" + filename
+		send("post", cacheFileCheckUrl, false, "fileName=" + filename
 				+ "&fileCacheName=" + fileCacheName + "&fileCacheSize="
 				+ fileCacheSize, "application/x-www-form-urlencoded", null,
 				function(data) {
@@ -197,59 +200,59 @@ var GnifUpload = (function() {
 		return flag;
 	}
 
-	function uploadCacheFile(cacheFileCheckUrl, cacheUploadUrl, cachefile) {
-		var isSuccess = checkFileCacheExist(cacheFileCheckUrl, cachefile
-				.getFilename(), cachefile.getOrder(), cachefile.getSize());
+	var fileCachesTemp;
+	function getNextCacheFileFromUploadFileCaches(){
+		while(!!!fileCachesTemp||fileCachesTemp.isEmpty()){
+			if(!!fileCachesTemp&&fileCachesTemp.isEmpty()){
+				mergeFile(fileMergeUrl, "fileName=" + encodeURIComponent(fileCachesTemp.getFilename()) + "&fileSize=" + fileCachesTemp.getFullsize())
+				uploadFileCacheArray = uploadFileCacheArray.slice(1);
+				if(uploadFileCacheArray.length==0){
+					return null;
+				}
+			}
+			if(uploadFileCacheArray.length==0){
+				return null;
+			}else{
+				fileCachesTemp = uploadFileCacheArray[0];
+			}
+		}
+		return fileCachesTemp.getCacheFiles()[0];
+	}
+	
+	function removeCacheFileFromUploadCaches(){
+		fileCachesTemp.removeCache(0);
+	}
+	
+
+	function uploadCacheFile() {
+		var cacheFile = getNextCacheFileFromUploadFileCaches();
+		if(cacheFile==null){
+			return;
+		}
+		var isSuccess = checkFileCacheExist(cacheFile.getFilename(), cacheFile.getOrder(), cacheFile.getSize());
 		if (!isSuccess) {
 			fd = new FormData();
-			fd.append(cachefile.getFilename(), cachefile.getData());
-			fd.append(cachefile.getOrder(), cachefile.getOrder());
-			send("post", cacheUploadUrl, false, fd, null, cachefile, function(
+			fd.append(cacheFile.getFilename(), cacheFile.getData());
+			fd.append(cacheFile.getOrder(), cacheFile.getOrder());
+			send("post", cacheFileUploadUrl, true, fd, null, cacheFile, function(
 					data) {
 				var jsondata = eval('(' + data + ')');
 				console.log(jsondata);
 				isSuccess = jsondata.isSuccess;
+				if(isSuccess){
+					removeCacheFileFromUploadCaches(cacheFile);
+					uploadCacheFile();
+				}else{
+					throw(jsondata.message+" : "+jsondata.body)
+				}
 			});
 		} else {
-			updateProgress(cachefile, cachefile.getSize());
+			removeCacheFileFromUploadCaches();
+			updateProgress(cacheFile, cacheFile.getSize());
+			uploadCacheFile();
 		}
-		return isSuccess;
 	}
 
-	function startUploadCacheFile(cacheFileCheckUrl, cacheFileUploadUrl) {
-		uploadFileCacheArray.forEach(function(fileCaches, index, array) {
-			if (!fileCaches.isEmpty()) {
-				var indexArray = new Array();
-				fileCaches.getCacheFiles().forEach(
-						function(cachefile, index, array) {
-							var isSuccess = uploadCacheFile(cacheFileCheckUrl,
-									cacheFileUploadUrl, cachefile);
-							if (isSuccess) {
-								indexArray.push(index + 1);
-							}
-						});
-				indexArray.forEach(function(index, i, arr) {
-					fileCaches.removeCache(index);
-				});
-			}
-		});
-	}
-
-	function startMergeCacheFile(fileMergeUrl) {
-		var indexArray = new Array();
-		uploadFileCacheArray.forEach(function(fileCaches, index, array) {
-			if (fileCaches.isEmpty()) {
-				if (mergeFile(fileMergeUrl, "fileName="
-						+ encodeURIComponent(fileCaches.getFilename())
-						+ "&fileSize=" + fileCaches.getFullsize())) {
-					indexArray.push(index + 1);
-				}
-			}
-		});
-		indexArray.forEach(function(index, i, arr) {
-			uploadFileCacheArray = uploadFileCacheArray.slice(index);
-		});
-	}
 
 	const CACHE_FILE_LENGTH = 10 * 1024 * 1024;
 	var uploadFileArray = new Array();// 待上传文件列表
@@ -267,18 +270,70 @@ var GnifUpload = (function() {
 		uploadFileCacheArray.length = 0;
 		// 获取文件数,将所有文件放入待上传列表
 		uploadFileArray = getAllFiles("gnifupfiles");
+		if(!!!uploadFileArray||uploadFileArray.length==0){
+			return;
+		}
 		uploadFileArray.forEach(function(file, index, array) {
 			var element = document.createElement("div");
 			element.id = encodeURIComponent(file.name);
 			element.innerHTML = file.name
-					+ "<div id='upimg'><div id='load'></div></div>";
+					+ "<div id='upimg'><div id='percent'></div><div id='load'></div></div>";
 			li.appendChild(element);
 		});
+		
+//		checkFileUploadInfo();
 	}
 	
+//列出文件列表前做检测，，上传失败再次上传需要做检测，(上传途中不做检测)	
+//	function checkFileUploadInfo(){
+//		uploadFileArray.forEach(function(uploadFile, index, array) {
+//			// 判断文件是否存在,如果存在，移往成功列表，不存在则上传
+//			if (checkFileExist(fileCheckUrl, uploadFile.name)) {
+//				completePorgress(uploadFile.name);
+//				// 从上传列表移除
+//				uploadFileArray = uploadFileArray.slice(index + 1);
+//			}else {
+//				// 分割文件
+//				var start = 0;
+//				var end;
+//				var cacheFiles = new Array();
+//				while (start < uploadFile.size) {
+//					end = start + CACHE_FILE_LENGTH;
+//					blob = uploadFile.slice(start, end);
+//					var cacheFile = new CacheFile(uploadFile.name,
+//							uploadFile.size, start + 1, blob);
+//					cacheFiles.push(cacheFile);
+//					start = end;
+//				}
+//				var fileCaches = new FileCaches(uploadFile.name,uploadFile.size, uploadFile, cacheFiles);
+//				uploadFileCacheArray.push(fileCaches);
+//			}
+//			if (uploadFileCacheArray.length > 0) {
+//				uploadCacheFileCheck();
+//			}
+//		});
+//	}
+//	
+//	function uploadCacheFileCheck(){
+//		var cacheFile = getNextCacheFileFromUploadFileCaches();
+//		if(cacheFile==null){
+//			return;
+//		}
+//		var isSuccess = checkFileCacheExist(cacheFile.getFilename(), cacheFile.getOrder(), cacheFile.getSize());
+//		if (!isSuccess) {
+//			
+//		} else {
+//			updateProgress(cacheFile, cacheFile.getSize());
+//			uploadCacheFile();
+//		}
+//	}
+	
+	
 	function _startUploadFiles() {
-		console.log("hah");
 		try {
+			if(!!!uploadFileArray||uploadFileArray.length==0){
+				return;
+			}
 			// 获取单个文件上传
 			uploadFileArray.forEach(function(uploadFile, index, array) {
 				// 判断文件是否存在,如果存在，移往成功列表，不存在则上传
@@ -304,9 +359,8 @@ var GnifUpload = (function() {
 					uploadFileCacheArray.push(fileCaches);
 				}
 			});
-			while (uploadFileCacheArray.length > 0) {
-				startUploadCacheFile(cacheFileCheckUrl, cacheFileUploadUrl);
-				startMergeCacheFile(fileMergeUrl, uploadFileCacheArray)
+			if (uploadFileCacheArray.length > 0) {
+				uploadCacheFile();
 			}
 		} catch (e) {
 			alert(e);

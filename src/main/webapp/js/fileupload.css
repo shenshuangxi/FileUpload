@@ -25,3 +25,7 @@
 	background: green;
 	text-align: center;
 }
+
+#percent{
+	float:left;
+}
