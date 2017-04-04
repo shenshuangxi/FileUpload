@@ -64,6 +64,7 @@ public class FileMergeServlet extends HttpServlet {
 			
 			RandomAccessFile wraf = new RandomAccessFile(targetFile, "rw");
 			try {
+				int count = 0;
 				for(File cacheFile : cacheFiles){
 					ByteBuffer buf = ByteBuffer.allocate(1024);
 					RandomAccessFile rraf = new RandomAccessFile(cacheFile, "r");
@@ -75,6 +76,9 @@ public class FileMergeServlet extends HttpServlet {
 						}
 					} finally{
 						rraf.close();
+					}
+					if(count!=0&&count%10==0){
+						wraf.getChannel().force(true);
 					}
 				}
 			} finally{

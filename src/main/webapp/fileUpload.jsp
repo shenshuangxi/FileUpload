@@ -14,7 +14,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>分割大文件上传</title>
 <script type="text/javascript" src="js/fileupload.js"></script>
-<link rel="stylesheet" type="text/css" href="js/fileupload.css" />
+<link rel="stylesheet" type="text/css" href="css/fileupload.css" />
 </head>
 <body>
 	<!-- <form enctype="multipart/form-data">
@@ -25,12 +25,13 @@
 		<input type="button" value="uploadfile" onclick="start();" />
 	</form>
 	<div id="test">测试是否DIV消失</div> -->
-	<div id="gnifUploadFiles"></div>
+	<div id="gnifUploadFiles" ></div>
 </body>
 <script type="text/javascript">
 /* function start(){
 	startUploadFiles("/fileupload/FileCheckServlet.htm1","/fileupload/FileUploadServlet.htm1","/fileupload/FileMergeServlet.htm1","files");
 } */
+
 GnifUpload.showDiagram("/fileupload/FileCheckServlet.htm1","/fileupload/FileMergeServlet.htm1","/fileupload/CacheFileCheckServlet.htm1","/fileupload/FileUploadServlet.htm1",'gnifUploadFiles');
 </script>
 </html>
