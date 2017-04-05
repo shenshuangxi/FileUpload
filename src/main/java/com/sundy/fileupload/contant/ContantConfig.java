@@ -10,5 +10,7 @@ public interface ContantConfig {
 	
 	String linuxDirPath = "/usr/local/src/upload";
 	
+	String md5File = "fileMd5.properties";
+	
 	
 }

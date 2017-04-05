@@ -31,13 +31,7 @@ public class CacheFileCheckServlet extends HttpServlet {
 		String fileCacheName = request.getParameter("fileCacheName")==null?null:request.getParameter("fileCacheName");
 		long fileCacheSize = request.getParameter("fileCacheSize")==null?0l:Long.parseLong(request.getParameter("fileCacheSize"));
 		
-		String base = ContantConfig.winDirPath;
-		String separator = ContantConfig.fileSeparator;
-		if(separator.equals("/")){
-			base = ContantConfig.linuxDirPath;
-		}
-		
-		
+		String base = FileUtil.getBase();
 		if(fileName==null){
 			rspMessage.setIsSuccess(false);
 			rspMessage.setMessage("上传文件名参数空");
@@ -60,7 +54,7 @@ public class CacheFileCheckServlet extends HttpServlet {
 		}
 		
 		try {
-			String filePath = base+separator+MD5Util.encoderByMd5(fileName);
+			String filePath = base+ContantConfig.fileSeparator+MD5Util.encoderByMd5(fileName);
 			if(!FileUtil.exist(filePath)){
 				rspMessage.setIsSuccess(false);
 				rspMessage.setMessage(fileName+" 文件 "+fileCacheName+"还没开始上传");
@@ -76,7 +70,7 @@ public class CacheFileCheckServlet extends HttpServlet {
 		};
 		
 		try {
-			String cacheFilePath = base+separator+MD5Util.encoderByMd5(fileName)+separator+fileCacheName;
+			String cacheFilePath = base+ContantConfig.fileSeparator+MD5Util.encoderByMd5(fileName)+ContantConfig.fileSeparator+fileCacheName;
 			if(!FileUtil.exist(cacheFilePath)){
 				rspMessage.setIsSuccess(false);
 				rspMessage.setMessage(fileName+" 文件 "+fileCacheName+"还没开始上传");

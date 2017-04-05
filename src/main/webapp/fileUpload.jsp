@@ -13,6 +13,9 @@
 <base href="<%=basePath%>">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>分割大文件上传</title>
+<script type="text/javascript" src="js/gnif-md5.js"></script>
+<!-- <script type="text/javascript" src="js/md5.js"></script> -->
+<script type="text/javascript" src="js/spark-md5.js"></script>
 <script type="text/javascript" src="js/fileupload.js"></script>
 <link rel="stylesheet" type="text/css" href="css/fileupload.css" />
 </head>
@@ -28,10 +31,6 @@
 	<div id="gnifUploadFiles" ></div>
 </body>
 <script type="text/javascript">
-/* function start(){
-	startUploadFiles("/fileupload/FileCheckServlet.htm1","/fileupload/FileUploadServlet.htm1","/fileupload/FileMergeServlet.htm1","files");
-} */
-
 GnifUpload.showDiagram("/fileupload/FileCheckServlet.htm1","/fileupload/FileMergeServlet.htm1","/fileupload/CacheFileCheckServlet.htm1","/fileupload/FileUploadServlet.htm1",'gnifUploadFiles');
 </script>
 </html>

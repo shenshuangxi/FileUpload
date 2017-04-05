@@ -1,5 +1,6 @@
 package com.sundy.fileupload;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
@@ -27,27 +28,54 @@ public class FileCheckServlet extends HttpServlet {
 		//body true 表示不需上传
 		RspMessage rspMessage = new RspMessage(true, "文件已存在");
 		
+		String md5 = request.getParameter("md5");
 		String fileName = request.getParameter("fileName");
-		String base = ContantConfig.winDirPath;
-		String separator = ContantConfig.fileSeparator;
-		if(separator.equals("/")){
-			base = ContantConfig.linuxDirPath;
-		}
+//		long fileSize = request.getParameter("fileSize")==null?0l:Long.parseLong(request.getParameter("fileSize"));
+//		String base = FileUtil.getBase();
 		
-		if(fileName==null){
+		if(md5==null){
 			rspMessage.setIsSuccess(false);
-			rspMessage.setMessage("上传文件名参数空");
+			rspMessage.setMessage("上传文件md5参数空");
 			response.getWriter().write(JSON.toJSONString(rspMessage));
 			return ;
 		}
 		
-		//检查文件是否已经上传合并
-		String filePath = base+separator+fileName;
-		if(!FileUtil.exist(filePath)){
+//		if(fileName==null){
+//			rspMessage.setIsSuccess(false);
+//			rspMessage.setMessage("上传文件名参数空");
+//			response.getWriter().write(JSON.toJSONString(rspMessage));
+//			return ;
+//		}
+//		
+//		
+//		//检查文件是否已经上传合并
+//		String filePath = base+ContantConfig.fileSeparator+fileName;
+//		if(!FileUtil.exist(filePath)){
+//			rspMessage.setIsSuccess(false);
+//			rspMessage.setMessage(fileName+" 文件不存在");
+//			response.getWriter().write(JSON.toJSONString(rspMessage));
+//			return ;
+//		}
+//		//检测文件大小是否一致
+//		File file = new File(filePath);
+//		if(file.length()!=fileSize){
+//			file.delete();
+//			rspMessage.setIsSuccess(false);
+//			rspMessage.setMessage(fileName+" 文件大小不一致，需要重新上传");
+//			response.getWriter().write(JSON.toJSONString(rspMessage));
+//			return ;
+//		}
+		
+		String value = FileUtil.getProperty(md5);
+		if(value==null){
 			rspMessage.setIsSuccess(false);
 			rspMessage.setMessage(fileName+" 文件不存在");
 			response.getWriter().write(JSON.toJSONString(rspMessage));
-			return ;
+			return;
+		}else{
+			if(!value.contains(fileName)){
+				FileUtil.addProperty(md5, fileName);
+			}
 		}
 		
 		response.getWriter().write(JSON.toJSONString(rspMessage));

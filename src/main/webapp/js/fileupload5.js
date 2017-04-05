@@ -1,16 +1,13 @@
 ;
 var GnifUpload = (function() {
 	
-	function FileCaches(filename, fullsize, fileMd5, file, cacheFiles) {
+	function FileCaches(filename, fullsize, file, cacheFiles) {
 		this.filename = filename;
 		this.fullsize = fullsize;
-		this.fileMd5 = fileMd5;
 		this.file = file;
 		this.cacheFiles = cacheFiles;
 		this.percent = 0;
-		this.getFileMd5 = function() {
-			return this.fileMd5;
-		}
+
 		this.getFullsize = function() {
 			return this.fullsize;
 		}
@@ -43,12 +40,11 @@ var GnifUpload = (function() {
 
 	}
 
-	function CacheFile(filename, fullSize, allFileMD5, order, data) {
+	function CacheFile(filename, fullSize, order, data) {
 		this.filename = filename;
 		this.fullSize = fullSize;
 		this.order = order;
 		this.data = data;
-		this.allFileMD5 = allFileMD5;
 		this.getFilename = function() {
 			return this.filename;
 		}
@@ -60,9 +56,6 @@ var GnifUpload = (function() {
 		}
 		this.getSize = function() {
 			return this.data.size;
-		}
-		this.getAllFileMD5 = function() {
-			return this.allFileMD5;
 		}
 		this.getFullSize = function() {
 			return this.fullSize;
@@ -225,9 +218,10 @@ var GnifUpload = (function() {
 		}
 	}
 
-	function checkFileExist(checkFileUrl, param) {
+	function checkFileExist(checkFileUrl, filename, fileSize) {
 		var isSuccess = false;
-		send("post", checkFileUrl, false, param, "application/x-www-form-urlencoded", null, function(data) {
+		send("post", checkFileUrl, false, "fileName=" + filename+"&fileSize="+fileSize,
+				"application/x-www-form-urlencoded", null, function(data) {
 					var jsondata = eval('(' + data + ')');
 					console.log(jsondata);
 					isSuccess = jsondata.isSuccess;
@@ -315,98 +309,64 @@ var GnifUpload = (function() {
 
 	}
 	
-	function getNextFile(){
-		if(uploadFileArray.length>0){
-			var tempFile = uploadFileArray[0];
-			uploadFileArray = uploadFileArray.slice(1);
-			return tempFile;
-		}
-	}
-	
-	function spiltFileAndCheck(file,md5){
-		var param = "fileName="+encodeURIComponent(file.name)+"&md5="+md5;
-		if (checkFileExist(fileCheckUrl, param)) {
-			completePorgress(file.name);
-		} else {
-			// 分割文件
-			var start = 0;
-			var end;
-			var cacheFiles = new Array();
-			while (start < file.size) {
-				end = start + CACHE_FILE_LENGTH;
-				blob = file.slice(start, end);
-				var cacheFile = new CacheFile(file.name,file.size, md5, start + 1, blob);
-				//判断该分割文件是否存在,如果存在就更新上传进度，如果不存在，则将该分割文件放入分割文件缓冲区
-				var isSuccess = checkFileCacheExist(cacheFile.getFilename(), cacheFile.getOrder(), cacheFile.getSize());
-				if(isSuccess){
-					updateProgress(cacheFile, cacheFile.getSize());
-				}else{
-					cacheFiles.push(cacheFile, md5);
-				}
-				start = end;
-			}
-			var fileCaches = new FileCaches(file.name, file.size, md5, file, cacheFiles);
-			uploadFileCacheArray.push(fileCaches);
-		}
-	}
-	
-	function generateMD5(callFunc){
-		var file = getNextFile();
-		if(!!!file){
-			return;
-		}
-		
-		var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
-		chunks = Math.ceil(file.size / CACHE_FILE_LENGTH),
-		currentChunk = 0,
-		spark = new SparkMD5.ArrayBuffer(),
-		
-		fileReader = new FileReader();
-		fileReader.onload = function (e) {
-			console.log('read chunk nr', currentChunk + 1, 'of', chunks);
-			spark.append(e.target.result);                   // Append array buffer
-			currentChunk++;
-			if (currentChunk < chunks) {
-			    loadNext();
-			} else {
-				console.log('finished loading');
-				var digestHexStr = spark.end();
-				console.info('computed hash', digestHexStr);  // Compute hash
-			    console.log(digestHexStr);
-			    callFunc(file,digestHexStr);
-			    generateMD5(callFunc);
-			 }
-		};
-		fileReader.onerror = function () {
-		    alert('oops, something went wrong.');
-		};
-		function loadNext() {
-		    var start = currentChunk * CACHE_FILE_LENGTH;
-		    var end = ((start + CACHE_FILE_LENGTH) >= file.size) ? file.size : start + CACHE_FILE_LENGTH;
-		    fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
-		}
-		loadNext();
-	}
-	
 	function spiltAndCheckAllFiles(){
-		//生成MD5，并检测分割文件
-		generateMD5(spiltFileAndCheck);
+		// 获取单个文件上传
+		uploadFileArray.forEach(function(uploadFile, index, array) {
+			if(uploadFile.size>0){
+				// 判断文件是否存在,如果存在，移往成功列表，不存在则上传
+				if (checkFileExist(fileCheckUrl, uploadFile.name, uploadFile.size)) {
+					completePorgress(uploadFile.name);
+					// 从上传列表移除
+					uploadFileArray = uploadFileArray.slice(index + 1);
+				} else {
+					// 分割文件
+					var start = 0;
+					var end;
+					var cacheFiles = new Array();
+					while (start < uploadFile.size) {
+						end = start + CACHE_FILE_LENGTH;
+						blob = uploadFile.slice(start, end);
+						var cacheFile = new CacheFile(uploadFile.name,uploadFile.size, start + 1, blob);
+						//判断该分割文件是否存在,如果存在就更新上传进度，如果不存在，则将该分割文件放入分割文件缓冲区
+						var isSuccess = checkFileCacheExist(cacheFile.getFilename(), cacheFile.getOrder(), cacheFile.getSize());
+						if(isSuccess){
+							updateProgress(cacheFile, cacheFile.getSize());
+						}else{
+							cacheFiles.push(cacheFile);
+						}
+						start = end;
+					}
+					var fileCaches = new FileCaches(uploadFile.name, uploadFile.size, uploadFile, cacheFiles);
+					uploadFileCacheArray.push(fileCaches);
+				}
+			}else{
+				throw(uploadFile.name+" 长度为0");
+			}
+			
+		});
 	}
+	
+	
 
-	const CACHE_FILE_LENGTH = 10 * 1024 * 1024;
+
+	var CACHE_FILE_LENGTH = 10 * 1024 * 1024;
 	var uploadFileArray = new Array();// 待上传文件列表
 	var uploadFileCacheArray = new Array();
 	var fileCheckUrl;
 	var fileMergeUrl;
 	var cacheFileCheckUrl;
 	var cacheFileUploadUrl;
+	var hasInit = false;
 
 	function init(){
-		//初始化百分数
-		initProgress();
-		initFileCahesTemp();
-		//文件分割检测
-		spiltAndCheckAllFiles();
+		if(!!!hasInit){
+			//初始化百分数
+			initProgress();
+			initFileCahesTemp();
+			//文件分割检测
+			spiltAndCheckAllFiles();
+			hasInit = true;
+		}
 	}
 	
 	function _listFiles() {
@@ -426,6 +386,7 @@ var GnifUpload = (function() {
 				element.innerHTML = file.name + "<div id='upimg'><div id='percent'></div><div id='load'></div><div id='speed'></div></div>";
 				li.appendChild(element);
 			});
+			hasInit = false;
 			init();
 		}catch(e){
 			alert(e);
@@ -434,6 +395,7 @@ var GnifUpload = (function() {
 	
 	function _startUploadFiles() {
 		try {
+			init();
 			if (uploadFileCacheArray.length > 0) {
 				uploadCacheFile();
 			}
