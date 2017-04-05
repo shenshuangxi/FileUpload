@@ -38,6 +38,12 @@ public class FileMergeServlet extends HttpServlet {
 				response.getWriter().write(JSON.toJSONString(rspMessage));
 				return ;
 			}
+			if(md5==null){
+				rspMessage.setIsSuccess(false);
+				rspMessage.setMessage("上传文件md5参数空");
+				response.getWriter().write(JSON.toJSONString(rspMessage));
+				return ;
+			}
 			String targetFilePath = base+ContantConfig.fileSeparator+fileName;
 			File targetFile = new File(targetFilePath);
 			String srcDirFilePath = base+ContantConfig.fileSeparator+MD5Util.encoderByMd5(fileName);
@@ -76,15 +82,14 @@ public class FileMergeServlet extends HttpServlet {
 			
 			//检测MD5码是否一致
 			String targetFilemd5 = FileUtil.getFileMd5(targetFilePath);
-			if(!md5.equals(targetFilemd5)){
+			if(!md5.equalsIgnoreCase(targetFilemd5)){
 				targetFile.delete();
 				rspMessage.setIsSuccess(false);
-				rspMessage.setMessage(fileName+"文件上传内容有误");
+				rspMessage.setMessage(fileName+"文件上传内容有误,需重新上传");
 				response.getWriter().write(JSON.toJSONString(rspMessage));
 				return;
 			}
 			FileUtil.addProperty(md5, fileName);
-			
 			response.getWriter().write(JSON.toJSONString(rspMessage));
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -12,7 +12,7 @@ public class MD5Util {
 		char [] ob = new char[2];
 		StringBuilder sb = new StringBuilder();
 		for(byte ib : bytes){
-			ob[0] = Digit[(ib >>> 4) & 0X0F];
+			ob[0] = Digit[(ib & 0XF0) >>> 4];
 			ob[1] = Digit[ib & 0X0F];
 			sb.append(ob[0]).append(ob[1]);
 		}

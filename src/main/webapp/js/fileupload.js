@@ -159,8 +159,24 @@ var GnifUpload = (function() {
 			prevLoad = null;
 			nodeSpeedText.innerHTML = '';
 		}
-		
-
+	}
+	
+	function resetProgress(filename) {
+		var progressParentDom = document.getElementById(encodeURIComponent(filename));
+		var nodes = progressParentDom.children || progressParentDom.childNodes;
+		var nodeArray = new Array();
+		getAllChildren(nodes, nodeArray);
+		nodeArray.forEach(function(node, index, arr) {
+			if (node.id == "load") {
+				node.style.width = '0%';
+			}
+			if(node.id == 'percent'){
+				node.innerHTML = '0.00%';
+			}
+			if(node.id == 'speed'){
+				node.innerHTML = '';
+			}
+		});
 	}
 
 	function completePorgress(filename) {
@@ -246,21 +262,19 @@ var GnifUpload = (function() {
 		return jsonData;
 	}
 
-	function checkFileCacheExist(filename, fileCacheName, fileCacheSize) {
-		var flag = false;
-		send("post", cacheFileCheckUrl, false, "fileName=" + filename
-				+ "&fileCacheName=" + fileCacheName + "&fileCacheSize="
-				+ fileCacheSize, "application/x-www-form-urlencoded", null,
+	function checkFileCacheExist(param) {
+		var exist;
+		send("post", cacheFileCheckUrl, false, param, "application/x-www-form-urlencoded", null,
 				function(data) {
 					var jsondata = eval('(' + data + ')');
 					console.log(jsondata);
-					flag = jsondata.isSuccess;
+					exist = jsondata.isSuccess;
 				});
-		return flag;
+		return exist;
 	}
 
 	var fileCachesTemp;
-	
+	var fileCachesTempCopy; 
 	function initFileCahesTemp(){
 		fileCachesTemp = null;
 	}
@@ -269,19 +283,20 @@ var GnifUpload = (function() {
 	function getNextCacheFileFromUploadFileCaches(){
 		while(!!!fileCachesTemp||fileCachesTemp.isEmpty()){
 			if(!!fileCachesTemp&&fileCachesTemp.isEmpty()){
-				var jsonData = mergeFile(fileMergeUrl, "fileName=" + encodeURIComponent(fileCachesTemp.getFilename()) + "&fileSize=" + fileCachesTemp.getFullsize());
+				var jsonData = mergeFile(fileMergeUrl, "fileName=" + encodeURIComponent(fileCachesTemp.getFilename()) + "&md5=" + fileCachesTemp.getFileMd5());
 				if(!jsonData.isSuccess){
-					throw(jsonData.message);
+					alert(jsonData.message);
+					resetProgress(fileCachesTemp.getFilename());
+					fileCachesTemp = new FileCaches(fileCachesTempCopy.getFilename(),fileCachesTempCopy.getFullsize(),fileCachesTempCopy.getFileMd5(),fileCachesTempCopy.getFile(),fileCachesTempCopy.getCacheFiles());;
+					return;
 				}
 				uploadFileCacheArray = uploadFileCacheArray.slice(1);
-				if(uploadFileCacheArray.length==0){
-					return null;
-				}
 			}
 			if(uploadFileCacheArray.length==0){
 				return null;
 			}else{
 				fileCachesTemp = uploadFileCacheArray[0];
+				fileCachesTempCopy =  new FileCaches(fileCachesTemp.getFilename(),fileCachesTemp.getFullsize(),fileCachesTemp.getFileMd5(),fileCachesTemp.getFile(),fileCachesTemp.getCacheFiles());
 			}
 		}
 		return fileCachesTemp.getCacheFiles()[0];
@@ -324,6 +339,7 @@ var GnifUpload = (function() {
 	}
 	
 	function spiltFileAndCheck(file,md5){
+		console.log(file.name+" , "+md5);
 		var param = "fileName="+encodeURIComponent(file.name)+"&md5="+md5;
 		if (checkFileExist(fileCheckUrl, param)) {
 			completePorgress(file.name);
@@ -337,11 +353,12 @@ var GnifUpload = (function() {
 				blob = file.slice(start, end);
 				var cacheFile = new CacheFile(file.name,file.size, md5, start + 1, blob);
 				//判断该分割文件是否存在,如果存在就更新上传进度，如果不存在，则将该分割文件放入分割文件缓冲区
-				var isSuccess = checkFileCacheExist(cacheFile.getFilename(), cacheFile.getOrder(), cacheFile.getSize());
-				if(isSuccess){
+				var param = "fileName=" + cacheFile.getFilename() + "&fileCacheName=" + cacheFile.getOrder() + "&fileCacheSize=" + cacheFile.getSize();
+				var exist = checkFileCacheExist(param);
+				if(exist){
 					updateProgress(cacheFile, cacheFile.getSize());
 				}else{
-					cacheFiles.push(cacheFile, md5);
+					cacheFiles.push(cacheFile);
 				}
 				start = end;
 			}
@@ -363,15 +380,12 @@ var GnifUpload = (function() {
 		
 		fileReader = new FileReader();
 		fileReader.onload = function (e) {
-			console.log('read chunk nr', currentChunk + 1, 'of', chunks);
 			spark.append(e.target.result);                   // Append array buffer
 			currentChunk++;
 			if (currentChunk < chunks) {
 			    loadNext();
 			} else {
-				console.log('finished loading');
 				var digestHexStr = spark.end();
-				console.info('computed hash', digestHexStr);  // Compute hash
 			    console.log(digestHexStr);
 			    callFunc(file,digestHexStr);
 			    generateMD5(callFunc);

@@ -60,21 +60,15 @@ public class FileUtil {
 	}
 	
 	public static void addProperty(String md5,String fileName){
-		Properties prop = new Properties();
-		try {
-			prop.load(FileUtil.class.getClassLoader().getResourceAsStream("fileMD5.properties"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		String existMd5File = getProperty(md5);
 		if(existMd5File!=null){
 			existMd5File = existMd5File + " , " + fileName;
 		}else{
 			existMd5File = fileName;
 		}
-		prop.setProperty(md5, existMd5File);
+		props.setProperty(md5, existMd5File);
 		try {
-			prop.store(new FileOutputStream(new File(md5FileProperties)), "");
+			props.store(new FileOutputStream(new File(md5FileProperties)), "");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -82,9 +76,9 @@ public class FileUtil {
 	
 	public static String getFileMd5(String filePath) throws Exception{
 		File file = new File(filePath);
+		MessageDigest md5 = MessageDigest.getInstance("MD5");
 		ByteBuffer buf = ByteBuffer.allocate(1024*10);
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
-		MessageDigest md5 = MessageDigest.getInstance("MD5");
 		try {
 			while(raf.getChannel().read(buf)>0){
 				buf.flip();
@@ -94,13 +88,22 @@ public class FileUtil {
 		} finally{
 			raf.close();
 		}
+//		
+//		FileInputStream fis = new FileInputStream(file);
+//		byte[] bufs = new byte[1024*10];
+//		int len = 0;
+//		while((len=fis.read(bufs))>0){
+//			md5.update(bufs, 0, len);
+//		}
+//		fis.close();
+		
 		String md5Str = MD5Util.byteHEX(md5.digest());
 		return md5Str;
 	}
 	
 	
 	public static void main(String[] args) throws Exception{
-		String filepath = getBase()+ContantConfig.fileSeparator+"从零开始学Storm.pdf";
+		String filepath = getBase()+ContantConfig.fileSeparator+"AxonFramework.rar";
 		System.out.println(getFileMd5(filepath));
 		
 //		GioneePasswordEncoder encoder = new GioneePasswordEncoder();
