@@ -13,21 +13,15 @@
 <base href="<%=basePath%>">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>分割大文件上传</title>
-<script type="text/javascript" src="js/gnif-md5.js"></script>
-<!-- <script type="text/javascript" src="js/md5.js"></script> -->
+<!-- <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script> 
+<script type="text/javascript" src="js/html5shiv.min.js"></script>
+<script type="text/javascript" src="js/respond.min.js"></script> -->
+<script type="text/javascript" src="js/html5.js"></script>
 <script type="text/javascript" src="js/spark-md5.js"></script>
 <script type="text/javascript" src="js/fileupload.js"></script>
 <link rel="stylesheet" type="text/css" href="css/fileupload.css" />
 </head>
 <body>
-	 <!-- <form enctype="multipart/form-data">
-		<div id="upimg">
-			<div id="load"></div>
-		</div>
-		<input type="file" id="files" multiple="multiple"  />
-		<input type="button" value="uploadfile" onclick="start();" />
-	</form>
-	<div id="test">测试是否DIV消失</div>  -->
 	<div id="gnifUploadFiles" ></div>
 </body>
 <script type="text/javascript">

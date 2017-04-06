@@ -463,7 +463,7 @@ var GnifUpload = (function() {
 		generateMD5(spiltFileAndCheck);
 	}
 
-	const CACHE_FILE_LENGTH = 10 * 1024 * 1024;
+	var CACHE_FILE_LENGTH = 10 * 1024 * 1024;
 	var uploadFileArray = new Array();// 待上传文件列表
 	var uploadFileCacheArray = new Array();
 	var fileCheckUrl;
