@@ -70,7 +70,7 @@ public class FileUploadServlet extends HttpServlet {
 				}
 			}
 			if(realItem!=null&&filename!=null&&cacheFilename!=null){
-				String fileDir = base + File.separator + MD5Util.encoderByMd5(filename);
+				String fileDir = base + File.separator + filename;
 				File dirFile = new File(fileDir);
 				if(!dirFile.exists()){
 					dirFile.mkdir();

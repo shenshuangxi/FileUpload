@@ -7,7 +7,7 @@ var GnifUpload = (function() {
 		this.fileMd5 = fileMd5;
 		this.file = file;
 		this.cacheFiles = cacheFiles;
-		this.percent = 0;
+		this.hasUploadSize = 0;
 		this.getFileMd5 = function() {
 			return this.fileMd5;
 		}
@@ -34,11 +34,11 @@ var GnifUpload = (function() {
 		this.isEmpty = function() {
 			return this.cacheFiles.length == 0;
 		}
-		this.setPercent = function(percent) {
-			this.percent = percent;
+		this.setHasUploadSize = function(hasUploadSize) {
+			this.hasUploadSize = hasUploadSize;
 		}
-		this.getPercent = function() {
-			return this.percent;
+		this.getHasUploadSize = function() {
+			return this.hasUploadSize;
 		}
 
 	}
@@ -108,7 +108,7 @@ var GnifUpload = (function() {
 	}
 
 	var prevTime;
-	function updateProgress(cacheFile, hasLoad) {
+	function updateProgress(cacheFile, hasLoad, showSpeed) {
 		var progressParentDom = document.getElementById(encodeURIComponent(cacheFile.getFilename()));
 		var nodes = progressParentDom.children || progressParentDom.childNodes;
 		var nodeArray = new Array();
@@ -127,33 +127,40 @@ var GnifUpload = (function() {
 				nodeSpeedText = node;
 			}
 		});
-		var nodeProgressParent = nodeProgress.parentNode; 
-		var pecent = parseFloat(nodeProgress.clientWidth)/parseFloat(nodeProgressParent.clientWidth);
-		var newUploadPecent = hasLoad/cacheFile.getFullSize();
-		pecent = 100 * (pecent + newUploadPecent);
-		if (pecent > 100) {
-			pecent = 100;
+//		var nodeProgressParent = nodeProgress.parentNode; 
+//		var percent = parseFloat(nodeProgress.clientWidth)/parseFloat(nodeProgressParent.clientWidth);
+//		var newUploadPecent = hasLoad/cacheFile.getFullSize();
+//		percent = 100 * (pecent + newUploadPecent);
+		var percent =  100 * (hasLoad + cacheFile.getOrder())/cacheFile.getFullSize();;
+		if (percent > 100) {
+			percent = 100;
 		}
-		nodeProgress.style.width = pecent + '%';
-		nodeProgressText.innerHTML = parseFloat(pecent).toFixed(2) + '%';
-		if(pecent!=100){
-			var currentTime = new Date().getTime();
-			var timePart;
-			var speed;
-			if(!!prevTime){
-				timePart = (currentTime - prevTime)/1000;
-				if((hasLoad/timePart)/1024/1024>1){
-					speed = parseFloat((hasLoad/timePart)/1024/1024).toFixed(2)+"Mb/s";
-				}else if((hasLoad/timePart)/1024>1){
-					speed = parseFloat((hasLoad/timePart)/1024).toFixed(2)+"kb/s";
+		nodeProgress.style.width = percent + '%';
+		nodeProgressText.innerHTML = parseFloat(percent).toFixed(2) + '%';
+		if(percent!=100){
+			if(!!showSpeed){
+				var currentTime = new Date().getTime();
+				var timePart;
+				var speed;
+				if(!!prevTime){
+					timePart = (currentTime - prevTime)/1000;
+					if((hasLoad/timePart)/1024/1024>1){
+						speed = parseFloat((hasLoad/timePart)/1024/1024).toFixed(2)+"Mb/s";
+					}else if((hasLoad/timePart)/1024>1){
+						speed = parseFloat((hasLoad/timePart)/1024).toFixed(2)+"kb/s";
+					}else{
+						speed = parseFloat((hasLoad/timePart)).toFixed(2)+"b/s";
+					}
 				}else{
-					speed = parseFloat((hasLoad/timePart)).toFixed(2)+"b/s";
+					speed = "0kb/s"; 
 				}
+				prevTime = currentTime;
+				nodeSpeedText.innerHTML = speed;
 			}else{
-				speed = "0kb/s"; 
+				prevTime = null;
+				prevLoad = null;
+				nodeSpeedText.innerHTML = '';
 			}
-			prevTime = currentTime;
-			nodeSpeedText.innerHTML = speed;
 		}else{
 			prevTime = null;
 			prevLoad = null;
@@ -216,7 +223,7 @@ var GnifUpload = (function() {
 			if (!!nonContentTypeData) {
 				xmlhttp.upload.onprogress = function(ev) {
 					if (ev.lengthComputable) {
-						updateProgress(nonContentTypeData, ev.loaded);
+						updateProgress(nonContentTypeData, ev.loaded, true);
 					}
 				}
 			}
@@ -227,6 +234,7 @@ var GnifUpload = (function() {
 					}else{
 						console.log(xmlhttp);
 				        console.log(xmlhttp.responseText);
+				        showWaitInfo(false,"上传文件");
 						alert("xmlhttp.status: "+xmlhttp.status+" 连接断开，数据发送出错");
 					}
 				}
@@ -237,6 +245,7 @@ var GnifUpload = (function() {
 				xmlhttp.send();
 			}
 		}catch(e){
+			showWaitInfo(false,"上传文件");
 			throw e;
 		}
 	}
@@ -293,7 +302,7 @@ var GnifUpload = (function() {
 				uploadFileCacheArray = uploadFileCacheArray.slice(1);
 			}
 			if(uploadFileCacheArray.length==0){
-				return null;
+				return ;
 			}else{
 				fileCachesTemp = uploadFileCacheArray[0];
 				fileCachesTempCopy =  new FileCaches(fileCachesTemp.getFilename(),fileCachesTemp.getFullsize(),fileCachesTemp.getFileMd5(),fileCachesTemp.getFile(),fileCachesTemp.getCacheFiles());
@@ -303,17 +312,30 @@ var GnifUpload = (function() {
 	}
 	
 	function removeCacheFileFromUploadCaches(){
+		var hasUploadSize = fileCachesTemp.getHasUploadSize() + fileCachesTemp.getCacheFiles()[0].getSize();
+		fileCachesTemp.setHasUploadSize(hasUploadSize);
 		fileCachesTemp.removeCache(0);
 	}
 	
 
 	function uploadCacheFile() {
+		//获取缓存文件
 		var cacheFile = getNextCacheFileFromUploadFileCaches();
 		if(cacheFile==null){
+			showWaitInfo(false,"上传文件");
 			return;
 		}
+		
+		//再次检测文件是否已经上传
+		var param = "fileName=" + encodeURIComponent(cacheFile.getFilename()) + "&md5=" + cacheFile.getAllFileMD5() + "&fileCacheName=" + cacheFile.getOrder() + "&fileCacheSize=" + cacheFile.getSize();
+		var exist = checkFileCacheExist(param);
+		if(exist){
+			removeCacheFileFromUploadCaches(cacheFile);
+			uploadCacheFile();
+		}
+		
 		fd = new FormData();
-		fd.append(cacheFile.getFilename(), cacheFile.getData());
+		fd.append(cacheFile.getAllFileMD5(), cacheFile.getData());
 		fd.append(cacheFile.getOrder(), cacheFile.getOrder());
 		send("post", cacheFileUploadUrl, true, fd, null, cacheFile, function(
 				data) {
@@ -324,18 +346,38 @@ var GnifUpload = (function() {
 				removeCacheFileFromUploadCaches(cacheFile);
 				uploadCacheFile();
 			}else{
-				throw(jsondata.message+" : "+jsondata.body)
+				showWaitInfo(false,"上传文件");
+				alert(jsondata.message+" : "+jsondata.body)
 			}
 		});
 
 	}
 	
+	
+	function showWaitInfo(shouldWait,info){
+		var uploadButton = document.getElementById('gnifUploadButton');
+		var uploadFileSelect = document.getElementById('gnifupfiles');
+		if(shouldWait){
+			uploadFileSelect.setAttribute('disabled','disabled');
+			uploadButton.setAttribute('disabled','disabled');
+			uploadButton.setAttribute('value',info);
+		}else{
+			uploadFileSelect.removeAttribute('disabled');
+			uploadButton.removeAttribute('disabled');
+			uploadButton.setAttribute('value',info);
+		}
+	}
+	
+	
 	function getNextFile(){
 		if(uploadFileArray.length>0){
 			var tempFile = uploadFileArray[0];
+			showWaitInfo(true,tempFile.name+'文件分析中,请稍等...');
 			uploadFileArray = uploadFileArray.slice(1);
 			return tempFile;
 		}
+		showWaitInfo(false,'上传文件');
+		return null;
 	}
 	
 	function spiltFileAndCheck(file,md5){
@@ -348,22 +390,36 @@ var GnifUpload = (function() {
 			var start = 0;
 			var end;
 			var cacheFiles = new Array();
+			var cacheFilesCopy = new Array();
 			while (start < file.size) {
 				end = start + CACHE_FILE_LENGTH;
 				blob = file.slice(start, end);
 				var cacheFile = new CacheFile(file.name,file.size, md5, start + 1, blob);
 				//判断该分割文件是否存在,如果存在就更新上传进度，如果不存在，则将该分割文件放入分割文件缓冲区
-				var param = "fileName=" + cacheFile.getFilename() + "&fileCacheName=" + cacheFile.getOrder() + "&fileCacheSize=" + cacheFile.getSize();
+				var param = "fileName=" + encodeURIComponent(file.name) + "&md5=" + md5 + "&fileCacheName=" + cacheFile.getOrder() + "&fileCacheSize=" + cacheFile.getSize();
 				var exist = checkFileCacheExist(param);
 				if(exist){
-					updateProgress(cacheFile, cacheFile.getSize());
+					cacheFilesCopy.push(cacheFile);
+					updateProgress(cacheFile, cacheFile.getSize(), false);
 				}else{
 					cacheFiles.push(cacheFile);
 				}
 				start = end;
 			}
-			var fileCaches = new FileCaches(file.name, file.size, md5, file, cacheFiles);
-			uploadFileCacheArray.push(fileCaches);
+			if(cacheFiles.length==0){
+				var jsonData = mergeFile(fileMergeUrl, "fileName=" + encodeURIComponent(file.name) + "&md5=" + md5);
+				//合并失败，重置，再次上传
+				if(!jsonData.isSuccess){
+					resetProgress(file.name);
+					var fileCachesTemp = new FileCaches(file.name, file.size, md5, file,cacheFilesCopy);
+					uploadFileCacheArray.push(fileCachesTemp);
+					alert(jsonData.message);
+				}
+			}else{
+				var fileCaches = new FileCaches(file.name, file.size, md5, file, cacheFiles);
+				uploadFileCacheArray.push(fileCaches);
+			}
+			
 		}
 	}
 	
@@ -437,7 +493,17 @@ var GnifUpload = (function() {
 			uploadFileArray.forEach(function(file, index, array) {
 				var element = document.createElement("div");
 				element.id = encodeURIComponent(file.name);
-				element.innerHTML = file.name + "<div id='upimg'><div id='percent'></div><div id='load'></div><div id='speed'></div></div>";
+				var sizeText;
+				if(file.size/1024/1024/1024>1){
+					sizeText = parseFloat(file.size/1024/1024/1024).toFixed(2)+"Gb";
+				}else if(file.size/1024/1024>1){
+					sizeText = parseFloat(file.size/1024/1024).toFixed(2)+"Mb";
+				}else if(file.size/1024>1){
+					sizeText = parseFloat(file.size/1024).toFixed(2)+"kb";
+				}else{
+					sizeText = parseFloat(file.size).toFixed(2)+"b";
+				}
+				element.innerHTML = file.name +"  ("+sizeText+ ")<div id='upimg'><div id='percent'></div><div id='speed'></div><div id='load'></div></div> ";
 				li.appendChild(element);
 			});
 			init();
@@ -448,10 +514,12 @@ var GnifUpload = (function() {
 	
 	function _startUploadFiles() {
 		try {
-			if (uploadFileCacheArray.length > 0) {
+			if (uploadFileCacheArray.length > 0 || (!!fileCachesTemp&&!fileCachesTemp.isEmpty())) {
+				showWaitInfo(true,"文件上传中...");
 				uploadCacheFile();
 			}
 		} catch (e) {
+			showWaitInfo(false,"上传文件");
 			alert(e);
 		}
 	}
@@ -467,7 +535,7 @@ var GnifUpload = (function() {
 			dom.innerHTML = "<div>"
 					+ "<form enctype='multipart/form-data'>"
 					+ "<input type='file' id='gnifupfiles' multiple='multiple' onchange='GnifUpload.listFiles();'/>"
-					+ "<input type='button' value='uploadfile' onclick='GnifUpload.startUploadFiles();'/>"
+					+ "<input type='button' id='gnifUploadButton' value='上传文件' onclick='GnifUpload.startUploadFiles();'/>"
 					+ "</form>" + "<div id='listFiles'></div>" + "</div>";
 		}
 	}

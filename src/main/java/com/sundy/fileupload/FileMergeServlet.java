@@ -1,9 +1,15 @@
 package com.sundy.fileupload;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -44,15 +50,28 @@ public class FileMergeServlet extends HttpServlet {
 				response.getWriter().write(JSON.toJSONString(rspMessage));
 				return ;
 			}
+			
 			String targetFilePath = base+ContantConfig.fileSeparator+fileName;
 			File targetFile = new File(targetFilePath);
-			String srcDirFilePath = base+ContantConfig.fileSeparator+MD5Util.encoderByMd5(fileName);
+			
+			String srcDirFilePath = base+ContantConfig.fileSeparator+md5;
 			File srcDirFile = new File(srcDirFilePath);
 			if(srcDirFile.isDirectory()&&srcDirFile.exists()){
 				RandomAccessFile wraf = new RandomAccessFile(targetFile, "rw");
 				int count = 0;
 				try {
-					for(File file : srcDirFile.listFiles()){
+					File[] files = srcDirFile.listFiles();
+					Arrays.sort(files, new Comparator<File>() {
+						@Override
+						public int compare(File o1, File o2) {
+							long o1Index = Long.parseLong(o1.getName());
+							long o2Index = Long.parseLong(o2.getName());
+							long value = o1Index - o2Index;
+							return value<0?-1:1;
+						}
+					});
+					
+					for(File file : files){
 						ByteBuffer buf = ByteBuffer.allocate(1024);
 						RandomAccessFile rraf = new RandomAccessFile(file, "r");
 						try {

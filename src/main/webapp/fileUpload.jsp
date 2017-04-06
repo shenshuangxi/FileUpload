@@ -20,14 +20,14 @@
 <link rel="stylesheet" type="text/css" href="css/fileupload.css" />
 </head>
 <body>
-	<!-- <form enctype="multipart/form-data">
+	 <!-- <form enctype="multipart/form-data">
 		<div id="upimg">
 			<div id="load"></div>
 		</div>
 		<input type="file" id="files" multiple="multiple"  />
 		<input type="button" value="uploadfile" onclick="start();" />
 	</form>
-	<div id="test">测试是否DIV消失</div> -->
+	<div id="test">测试是否DIV消失</div>  -->
 	<div id="gnifUploadFiles" ></div>
 </body>
 <script type="text/javascript">

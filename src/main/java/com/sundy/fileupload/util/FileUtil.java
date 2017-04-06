@@ -9,6 +9,9 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Properties;
 
 import com.sundy.fileupload.contant.ContantConfig;
@@ -74,10 +77,12 @@ public class FileUtil {
 		}
 	}
 	
+	
+	
 	public static String getFileMd5(String filePath) throws Exception{
 		File file = new File(filePath);
 		MessageDigest md5 = MessageDigest.getInstance("MD5");
-		ByteBuffer buf = ByteBuffer.allocate(1024*10);
+		ByteBuffer buf = ByteBuffer.allocate(1024*1024*10);
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
 		try {
 			while(raf.getChannel().read(buf)>0){
@@ -103,8 +108,9 @@ public class FileUtil {
 	
 	
 	public static void main(String[] args) throws Exception{
-		String filepath = getBase()+ContantConfig.fileSeparator+"AxonFramework.rar";
-		System.out.println(getFileMd5(filepath));
+//		String filepath = getBase()+ContantConfig.fileSeparator+"VMware_workstation_full_12.5.0.11529.exe";
+//		System.out.println(getFileMd5(filepath));
+		
 		
 //		GioneePasswordEncoder encoder = new GioneePasswordEncoder();
 //		File file = new File(filepath);
