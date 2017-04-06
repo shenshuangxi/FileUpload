@@ -64,6 +64,7 @@ var GnifUpload = (function() {
 	;
 
 	function getAllFiles(targetId) {
+		var files = uploaderget.Files();
 		var domFile = document.getElementById(targetId);
 		var files = domFile.files;
 		if (!!!files.length) {

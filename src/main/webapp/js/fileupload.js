@@ -71,15 +71,36 @@ var GnifUpload = (function() {
 	;
 
 	function getAllFiles(targetId) {
-		var domFile = document.getElementById(targetId);
-		var files = domFile.files;
-		if (!!!files.length) {
-			alert('请选择文件');
-			return;
-		}
+		
 		var fileArray = new Array();
-		for (var i = 0; i < files.length; i++) {
-			fileArray.push(files[i]);
+		
+		
+		
+		if(window.FileReader){
+			var domFile = document.getElementById(targetId);
+			var files = domFile.files;
+			if (!!!files.length) {
+				alert('请选择文件');
+				return;
+			}
+			for (var i = 0; i < files.length; i++) {
+				fileArray.push(files[i]);
+			}
+		}else{
+			var uploader = WebUploader.create({
+			    // swf文件路径
+			    swf:  'js/webuploader/Uploader.swf',
+			    // 选择文件的按钮。可选。
+			    // 内部根据当前运行是创建，可能是input元素，也可能是flash.
+			    pick: '#gnifupfiles',
+			    // 不压缩image, 默认如果是jpeg，文件上传前会压缩一把再上传！
+			    resize: false
+			});
+			fileArray = uploader.getFiles();
+			if (!!!fileArray.length) {
+				alert('请选择文件');
+				return;
+			}
 		}
 		return fileArray;
 	}
