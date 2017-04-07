@@ -87,20 +87,8 @@ var GnifUpload = (function() {
 				fileArray.push(files[i]);
 			}
 		}else{
-			var uploader = WebUploader.create({
-			    // swf文件路径
-			    swf:  'js/webuploader/Uploader.swf',
-			    // 选择文件的按钮。可选。
-			    // 内部根据当前运行是创建，可能是input元素，也可能是flash.
-			    pick: '#gnifupfiles',
-			    // 不压缩image, 默认如果是jpeg，文件上传前会压缩一把再上传！
-			    resize: false
-			});
-			fileArray = uploader.getFiles();
-			if (!!!fileArray.length) {
-				alert('请选择文件');
-				return;
-			}
+			alert('不支持该浏览器');
+			return;
 		}
 		return fileArray;
 	}
@@ -148,10 +136,6 @@ var GnifUpload = (function() {
 				nodeSpeedText = node;
 			}
 		});
-//		var nodeProgressParent = nodeProgress.parentNode; 
-//		var percent = parseFloat(nodeProgress.clientWidth)/parseFloat(nodeProgressParent.clientWidth);
-//		var newUploadPecent = hasLoad/cacheFile.getFullSize();
-//		percent = 100 * (pecent + newUploadPecent);
 		var percent =  100 * (hasLoad + cacheFile.getOrder())/cacheFile.getFullSize();;
 		if (percent > 100) {
 			percent = 100;
