@@ -255,10 +255,17 @@ var GnifFileUpload = (function(){
 	    }
 	}
 	
+	function _getFiles(){
+		if(!!uploader){
+			return uploader.getFiles();
+		}
+	}
+	
 	return {
 		init : _init,
 		start : _start,
-		stop : _stop
+		stop : _stop,
+		getFiles : _getFiles()
 	};
 	
 })();
