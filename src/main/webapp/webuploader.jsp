@@ -19,9 +19,8 @@
 <link rel="stylesheet" type="text/css" href="css/webuploader.css" />
 </head>
 <body>
-	<div>
-		<form></form>
-	</div>
+	<div id="add_video">选择文件</div>
+	<div id="item1"></div>
 </body>
 <script type="text/javascript">
 var fileMd5;  
@@ -103,20 +102,20 @@ var uploader = WebUploader.create({
     server: '<%=basePath%>CacheFileCheckServlet.htm1',  
     // 选择文件的按钮。可选。  
     // 内部根据当前运行是创建，可能是input元素，也可能是flash.  
-    pick: {id: '#add_video',   <span style="background-color: rgb(255, 204, 0);">//这个id是你要点击上传文件的id，自己设置就好</span>  
-    multiple:false},  
+     //这个id是你要点击上传文件的id，自己设置就好
+    pick: {id: '#add_video'}, //,   <span style="background-color: rgb(255, 204, 0);"></span> multiple:false
     // 不压缩image, 默认如果是jpeg，文件上传前会压缩一把再上传！  
-    resize: true,  
-    auto:true,  
+    //resize: true,  
+    //auto:true,  
     //开启分片上传  
     chunked: true,  
     chunkSize:10*1024*1024,  
       
-    accept: {  
+    //accept: {  
     //限制上传文件为MP4  
-        extensions: 'mp4',  
-        mimeTypes: 'video/mp4',  
-    }  
+    //    extensions: 'mp4',  
+    //    mimeTypes: 'video/mp4',  
+    //}  
 });  
           
 // 当有文件被添加进队列的时候  

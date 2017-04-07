@@ -15,6 +15,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.alibaba.fastjson.JSON;
 import com.sundy.fileupload.message.RspMessage;
+import com.sundy.fileupload.util.FileUtil;
 import com.sundy.fileupload.util.MD5Util;
 
 
@@ -39,11 +40,7 @@ public class FileUploadServlet extends HttpServlet {
 		// 设置内存缓冲区，超过后写入临时文件
 		factory.setSizeThreshold(10*1024*1024);
 		// 设置临时文件存储位置
-		String base = "d:\\uploadFiles";
-		String separator = File.separator;
-		if(separator.equals("/")){
-			base = "/usr/local/src/upload";
-		}
+		String base = FileUtil.getBase();
 		File file = new File(base);
 		if(!file.exists())
 			file.mkdirs();
@@ -55,37 +52,59 @@ public class FileUploadServlet extends HttpServlet {
 		upload.setSizeMax(10*1024*1024*1024l);
 		upload.setHeaderEncoding("UTF-8");
 		try {
-			List<?> items = upload.parseRequest(request);
-			String filename = null;
-			String cacheFilename = null;
-			FileItem realItem = null;
-			for (int i = 0 ;i < items.size(); i++){
-				FileItem item = (FileItem) items.get(i);
-				// 保存文件
-				if (!item.isFormField() && item.getName().length() > 0) {
-					filename =  item.getFieldName();
-					realItem = item;
-				}else{
-					cacheFilename = item.getName()==null?item.getFieldName():item.getName();
-				}
+			List<FileItem> items = upload.parseRequest(request);
+			String fileMd5 = null;  
+	        String chunkname = null;
+			for(FileItem item : items){
+				if(item.isFormField()){  
+	                String fieldName = item.getFieldName();  
+	                if(fieldName.equals("fileMd5")){  
+	                    fileMd5 = item.getString("utf-8");  
+	                }  
+	                if(fieldName.equals("chunk")){  
+	                	chunkname = item.getString("utf-8");  
+	                }
+	            }else{  
+	                File fileDir = new File(base+File.separator+fileMd5);  
+	                if(!fileDir.exists()){  
+	                	fileDir.mkdir();  
+	                }  
+	                System.out.println(fileMd5+" : "+chunkname);
+	                File chunkFile = new File(base+File.separator+fileMd5+File.separator+chunkname);  
+	                item.write(chunkFile);
+	            } 
 			}
-			if(realItem!=null&&filename!=null&&cacheFilename!=null){
-				String fileDir = base + File.separator + filename;
-				File dirFile = new File(fileDir);
-				if(!dirFile.exists()){
-					dirFile.mkdir();
-				}
-				String cacheFilePath = fileDir + File.separator + cacheFilename;
-				File cacheFile = new File(cacheFilePath);
-				if(cacheFile.exists()){
-					cacheFile.delete();
-					cacheFile = new File(cacheFilePath);
-				}
-				realItem.write(cacheFile);
-			}else{
-				rspMessage.setIsSuccess(false);
-				rspMessage.setMessage("服务器出错");
-			}
+			
+//			String filename = null;
+//			String cacheFilename = null;
+//			FileItem realItem = null;
+//			for (int i = 0 ;i < items.size(); i++){
+//				FileItem item = (FileItem) items.get(i);
+//				// 保存文件
+//				if (!item.isFormField() && item.getName().length() > 0) {
+//					filename =  item.getFieldName();
+//					realItem = item;
+//				}else{
+//					cacheFilename = item.getName()==null?item.getFieldName():item.getName();
+//				}
+//			}
+//			if(realItem!=null&&filename!=null&&cacheFilename!=null){
+//				String fileDir = base + File.separator + filename;
+//				File dirFile = new File(fileDir);
+//				if(!dirFile.exists()){
+//					dirFile.mkdir();
+//				}
+//				String cacheFilePath = fileDir + File.separator + cacheFilename;
+//				File cacheFile = new File(cacheFilePath);
+//				if(cacheFile.exists()){
+//					cacheFile.delete();
+//					cacheFile = new File(cacheFilePath);
+//				}
+//				realItem.write(cacheFile);
+//			}else{
+//				rspMessage.setIsSuccess(false);
+//				rspMessage.setMessage("服务器出错");
+//			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			rspMessage.setIsSuccess(false);
