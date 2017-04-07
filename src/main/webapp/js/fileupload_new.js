@@ -18,7 +18,6 @@ var GnifFileUpload = (function(){
 	    return parseFloat( version[ 0 ] + '.' + version[ 1 ], 10 );
 	}
 	
-	
 	var prevPercent;
 	var prevTime;
 	function updateProgress(file,percentage){
@@ -61,11 +60,9 @@ var GnifFileUpload = (function(){
 	    $percent.css( 'width', percentage * 100 + '%' );
 	}
 	
-	var upload;
-	var fileMd5;  
-	var filename;
+	var uploader;
 	var $list;
-	function _init(swfUrl,uploadFileCheckUrl,uploadCacheFileCheckUrl,uploadCacheFileUrl,uploadFileMerge,filePickerDiv,fileListDiv){
+	function _init(swfUrl,uploadFileCheckUrl,uploadCacheFileCheckUrl,uploadCacheFileUrl,uploadFileMerge,filePickerDiv,fileListDiv,updateProgressCallback){
 		
 		if(!WebUploader.Uploader.support('flash') && WebUploader.browser.ie ){
 			if(flashVersion()){
@@ -86,22 +83,20 @@ var GnifFileUpload = (function(){
 			},{  
 			  //时间点1：所有分块进行上传之前调用此函数  
 			  beforeSendFile:function(file){  
-				  filename = file.name;
 				  var deferred = WebUploader.Deferred();  
 				  (new WebUploader.Uploader()).md5File(file,0,file.size).progress(function(percentage){
 					  $('#'+file.id).find('p.state').text('文件分析中...');  
 				  }).then(function(val){
-					  fileMd5=val;
-					  //file.md5 = val;
+					  file.md5 = val;
 					  $.ajax({  
 						  async:true,
 				          type:"POST",  
 				          url:uploadFileCheckUrl,  
 				          data:{  
 				              //文件唯一标记  
-				              md5:fileMd5,  
+				              md5:file.md5,  
 				              //当前分块下标  
-				              fileName:filename
+				              fileName:file.name
 				          },  
 				          dataType:"json",  
 				          success:function(response){  
@@ -126,7 +121,7 @@ var GnifFileUpload = (function(){
 			          url:uploadCacheFileCheckUrl,  
 			          data:{  
 			        	  //文件名称
-			        	  fileName: fileMd5,
+			        	  fileName: block.file.name,
 			              //文件唯一标记  
 			              md5:block.file.md5,  
 			              //当前分块名称，即起始位置
@@ -145,7 +140,7 @@ var GnifFileUpload = (function(){
 			              }  
 			          }  
 			      });  
-			      this.owner.options.formData.fileMd5 = fileMd5; 
+			      this.owner.options.formData.fileMd5 = block.file.md5; 
 			      this.owner.options.formData.chunk = block.chunk!=0?block.chunk:block.chunks; 
 			      return deferred.promise();
 			  },  
@@ -159,15 +154,20 @@ var GnifFileUpload = (function(){
 			          url:uploadFileMerge,  
 			          data:{  
 			        	//文件名称
-			        	  fileName: filename,
+			        	  fileName: file.name,
 			              //文件唯一标记  
-			              md5:fileMd5
+			              md5:file.md5
 			          },  
 			          success:function(response){ 
 			        	  if(response.isSuccess){
 			        		  $( '#'+file.id ).find('p.state').text('上传成功');
 			        	  }else{
-			        		  updateProgress(file,0);
+			        		  if(!!updateProgressCallback){
+			        			  updateProgressCallback(file,0);
+			        		  }else{
+			        			  updateProgress(file,0);
+			        		  }
+			        		 
 			        		  $( '#'+file.id ).find('p.state').text("上传失败，请刷新页面重新上传！！( 错误原因"+response.message+")");
 			        	  }
 			        	  deferred.resolve();
@@ -215,15 +215,28 @@ var GnifFileUpload = (function(){
 		
 		//文件上传过程中创建进度条实时显示。
 		uploader.on( 'uploadProgress', function( file, percentage ) {
-			updateProgress(file,percentage);
+			 if(!!updateProgressCallback){
+	   			updateProgressCallback(file,0);
+	   		 }else{
+	   			updateProgress(file,percentage);
+	   		 }
 		});
 		
 		uploader.on( 'uploadError', function( file,reason ) {
 			 if(reason=='该文件已上传'){
-				 updateProgress(file,1);
+				 if(!!updateProgressCallback){
+		   			 updateProgressCallback(file,0);
+		   		 }else{
+		   			 updateProgress(file,1);
+		   		 }
 				 $( '#'+file.id ).find('p.state').text('上传成功');
 			 }else{
-				 updateProgress(file,0);
+				 if(!!updateProgressCallback){
+		   			updateProgressCallback(file,0);
+		   		 }else{
+		   			updateProgress(file,0);
+		   		 }
+				 
 				 $( '#'+file.id ).find('p.state').text('上传出错');
 			 }
 		});
