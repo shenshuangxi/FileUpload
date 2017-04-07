@@ -2384,6 +2384,7 @@
          */
         function WUFile( source ) {
     
+        	this.md5 = '';
             /**
              * 文件名，包括扩展名（后缀）
              * @property name

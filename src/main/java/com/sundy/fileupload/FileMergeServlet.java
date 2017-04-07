@@ -94,7 +94,7 @@ public class FileMergeServlet extends HttpServlet {
 				}
 			}else{
 				rspMessage.setIsSuccess(false);
-				rspMessage.setMessage(fileName+"文件不存在");
+				rspMessage.setMessage(md5+"/"+fileName+"文件不存在");
 				response.getWriter().write(JSON.toJSONString(rspMessage));
 				return;
 			}

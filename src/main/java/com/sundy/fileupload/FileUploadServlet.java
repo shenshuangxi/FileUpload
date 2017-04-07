@@ -51,30 +51,34 @@ public class FileUploadServlet extends HttpServlet {
 		// 设置整个request的最大值
 		upload.setSizeMax(10*1024*1024*1024l);
 		upload.setHeaderEncoding("UTF-8");
+		File fileDir = null;
 		try {
 			List<FileItem> items = upload.parseRequest(request);
 			String fileMd5 = null;  
 	        String chunkname = null;
-			for(FileItem item : items){
-				if(item.isFormField()){  
-	                String fieldName = item.getFieldName();  
+	        FileItem item = null;
+			for(FileItem tempItem : items){
+				if(tempItem.isFormField()){  
+	                String fieldName = tempItem.getFieldName();  
 	                if(fieldName.equals("fileMd5")){  
-	                    fileMd5 = item.getString("utf-8");  
+	                    fileMd5 = tempItem.getString("utf-8");  
 	                }  
 	                if(fieldName.equals("chunk")){  
-	                	chunkname = item.getString("utf-8");  
+	                	chunkname = tempItem.getString("utf-8");  
 	                }
-	            }else{  
-	                File fileDir = new File(base+File.separator+fileMd5);  
-	                if(!fileDir.exists()){  
-	                	fileDir.mkdir();  
-	                }  
-	                System.out.println(fileMd5+" : "+chunkname);
-	                File chunkFile = new File(base+File.separator+fileMd5+File.separator+chunkname);  
-	                item.write(chunkFile);
+	            }else{
+	            	item = tempItem;
 	            } 
 			}
-			
+			if(fileMd5!=null&&item!=null&&chunkname!=null){
+				fileDir = new File(base+File.separator+fileMd5);  
+                if(!fileDir.exists()){  
+                	fileDir.mkdir();  
+                }  
+                System.out.println(fileMd5+File.separator+chunkname);
+                File chunkFile = new File(base+File.separator+fileMd5+File.separator+chunkname);  
+                item.write(chunkFile);
+			}
 //			String filename = null;
 //			String cacheFilename = null;
 //			FileItem realItem = null;
